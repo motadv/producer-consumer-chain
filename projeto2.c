@@ -1,6 +1,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include </usr/include/semaphore.h>
 
 #define BUFF_SIZE 5 /* total number of slots */
@@ -45,7 +46,8 @@ void *Producer(void *arg)
     FILE *input_file = fopen("entrada.in", "r");
     if (input_file == NULL)
     {
-        printf("Error: Producer unable to load input file");
+        printf("Error: Producer unable to load input file\n");
+        fflush(stdout);
         return NULL;
     }
 
@@ -65,26 +67,28 @@ void *Producer(void *arg)
         }
 
         // Open input file
+        strtok(line, "\n");
         FILE *file = fopen(line, "r");
         if (file == NULL)
         {
-            printf("Error: Producer undable to load file %d", i);
+            printf("Error: Producer undable to load file %d\n", i);
+            fflush(stdout);
             return NULL;
         }
 
         // Load matrix A
-        for (int row; row < 10; row++)
+        for (int row = 0; row < 10; row++)
         {
-            for (int column; column < 10; column++)
+            for (int column = 0; column < 10; column++)
             {
                 fscanf(file, "%lf", &data->A[row][column]);
             }
         }
 
         // Load matrix B
-        for (int row; row < 10; row++)
+        for (int row = 0; row < 10; row++)
         {
-            for (int column; column < 10; column++)
+            for (int column = 0; column < 10; column++)
             {
                 fscanf(file, "%lf", &data->B[row][column]);
             }
@@ -96,6 +100,7 @@ void *Producer(void *arg)
 
         shared[0].buf[shared[0].in] = data;
         printf("Produzido recurso: %s", shared[0].buf[shared[0].in]->nome);
+        fflush(stdout);
         shared[0].in = (shared[0].in + 1) % BUFF_SIZE;
 
         sem_post(&shared[0].mutex);
@@ -272,6 +277,7 @@ void *Consumer(void *arg)
         sem_post(&shared[3].empty);
 
         imprimeRecurso(item, saida);
+        fflush(saida);
     }
 
     fclose(saida);
@@ -280,15 +286,17 @@ void *Consumer(void *arg)
 
 void imprimeRecurso(S *recurso, FILE *saida)
 {
+    char delimeter[41] = "=======================================\n";
+    char spacer[41] = "---------------------------------------\n";
     if (saida == NULL)
     {
         printf("Erro ao abrir arquivo de saída!\n");
         return;
     }
 
-    fprintf(saida, "=======================================");
+    fprintf(saida, "%s\n", delimeter);
     fprintf(saida, "Nome: %s\n", recurso->nome);
-    fprintf(saida, "---------------------------------------");
+    fprintf(saida, "%s\n", spacer);
     fprintf(saida, "Matriz A:\n");
     for (int i = 0; i < 10; i++)
     {
@@ -298,7 +306,7 @@ void imprimeRecurso(S *recurso, FILE *saida)
         }
         fprintf(saida, "\n");
     }
-    fprintf(saida, "---------------------------------------");
+    fprintf(saida, "%s\n", spacer);
 
     fprintf(saida, "Matriz B:\n");
     for (int i = 0; i < 10; i++)
@@ -309,7 +317,7 @@ void imprimeRecurso(S *recurso, FILE *saida)
         }
         fprintf(saida, "\n");
     }
-    fprintf(saida, "---------------------------------------");
+    fprintf(saida, "%s\n", spacer);
 
     fprintf(saida, "Matriz C:\n");
     for (int i = 0; i < 10; i++)
@@ -320,7 +328,7 @@ void imprimeRecurso(S *recurso, FILE *saida)
         }
         fprintf(saida, "\n");
     }
-    fprintf(saida, "---------------------------------------");
+    fprintf(saida, "%s\n", spacer);
 
     fprintf(saida, "Vetor V:\n");
     for (int i = 0; i < 10; i++)
@@ -328,20 +336,22 @@ void imprimeRecurso(S *recurso, FILE *saida)
         fprintf(saida, "%f\n", recurso->V[i]);
     }
     fprintf(saida, "\n");
-    fprintf(saida, "---------------------------------------");
+    fprintf(saida, "%s\n", spacer);
 
     fprintf(saida, "Valor E: %f\n", recurso->E);
 }
 
 int main()
 {
-    printf("Programa Inicializado");
+    printf("Programa Inicializado\n");
+    fflush(stdout);
 
     pthread_t idP[NP], idCP1[NCP1], idCP2[NCP2], idCP3[NCP3], idC[NC];
     int index;
     int sP[NP], sCP1[NCP1], sCP2[NCP2], sCP3[NCP3], sC[NC];
 
-    printf("Inicializando semaforos");
+    printf("Inicializando semaforos\n");
+    fflush(stdout);
     for (index = 0; index < 4; index++)
     {
         sem_init(&shared[index].full, 0, 0);
@@ -349,7 +359,8 @@ int main()
         sem_init(&shared[index].mutex, 0, 1);
     }
 
-    printf("Inicializando Produtores");
+    printf("Inicializando Produtores\n");
+    fflush(stdout);
     for (index = 0; index < NP; index++)
     {
         sP[index] = index;
@@ -357,7 +368,8 @@ int main()
         pthread_create(&idP[index], NULL, Producer, &sP[index]);
     }
 
-    printf("Inicializando CP1");
+    printf("Inicializando CP1\n");
+    fflush(stdout);
     for (index = 0; index < NCP1; index++)
     {
         sCP1[index] = index;
@@ -365,7 +377,8 @@ int main()
         pthread_create(&idCP1[index], NULL, ConsumerProducer1, &sCP1[index]);
     }
 
-    printf("Inicializando CP2");
+    printf("Inicializando CP2\n");
+    fflush(stdout);
     for (index = 0; index < NCP2; index++)
     {
         sCP2[index] = index;
@@ -373,7 +386,8 @@ int main()
         pthread_create(&idCP2[index], NULL, ConsumerProducer2, &sCP2[index]);
     }
 
-    printf("Inicializando CP3");
+    printf("Inicializando CP3\n");
+    fflush(stdout);
     for (index = 0; index < NCP3; index++)
     {
         sCP1[index] = index;
@@ -381,12 +395,18 @@ int main()
         pthread_create(&idCP3[index], NULL, ConsumerProducer3, &sCP3[index]);
     }
 
-    printf("Inicializando Consumidor");
+    printf("Inicializando Consumidor\n");
+    fflush(stdout);
     for (index = 0; index < NC; index++)
     {
         sC[index] = index;
         /* Create a new consumer */
         pthread_create(&idC[index], NULL, Consumer, &sC[index]);
+    }
+
+    for (index = 0; index < NC; index++)
+    {
+        pthread_join(idC[index], NULL);
     }
 
     pthread_join(idC[0], NULL);
