@@ -4,23 +4,24 @@
 #include <string.h>
 #include </usr/include/semaphore.h>
 
-#define BUFF_SIZE 5 /* total number of slots */
-#define NP 1        /* total number of producers */
-#define NCP1 5      /* total number of CP1*/
-#define NCP2 4      /* total number of CP2*/
-#define NCP3 3      /* total number of CP3*/
-#define NC 1        /* total number of consumers */
-#define NITERS 50   /* number of items produced/consumed */
+#define BUFF_SIZE 5     /* total number of slots */
+#define NP 1            /* total number of producers */
+#define NCP1 5          /* total number of CP1*/
+#define NCP2 4          /* total number of CP2*/
+#define NCP3 3          /* total number of CP3*/
+#define NC 1            /* total number of consumers */
+#define NITERS 50       /* number of items produced/consumed */
+#define MATRIX_ORDER 10 /*order of A, B and C*/
 
 #define MAX_STRING_SIZE 100
 
 typedef struct
 {
     char nome[MAX_STRING_SIZE];
-    double A[10][10];
-    double B[10][10];
-    double C[10][10];
-    double V[10];
+    double A[MATRIX_ORDER][MATRIX_ORDER];
+    double B[MATRIX_ORDER][MATRIX_ORDER];
+    double C[MATRIX_ORDER][MATRIX_ORDER];
+    double V[MATRIX_ORDER];
     double E;
 } S;
 
@@ -54,7 +55,7 @@ void *Producer(void *arg)
     char line[MAX_STRING_SIZE];
     int i = 0;
 
-    // Para cada arquivo de entrada:
+    // Iterate over each entry
     for (i = 0; i < NITERS; i++)
     {
         fgets(line, MAX_STRING_SIZE, input_file);
@@ -77,18 +78,18 @@ void *Producer(void *arg)
         }
 
         // Load matrix A
-        for (int row = 0; row < 10; row++)
+        for (int row = 0; row < MATRIX_ORDER; row++)
         {
-            for (int column = 0; column < 10; column++)
+            for (int column = 0; column < MATRIX_ORDER; column++)
             {
                 fscanf(file, "%lf", &data->A[row][column]);
             }
         }
 
         // Load matrix B
-        for (int row = 0; row < 10; row++)
+        for (int row = 0; row < MATRIX_ORDER; row++)
         {
-            for (int column = 0; column < 10; column++)
+            for (int column = 0; column < MATRIX_ORDER; column++)
             {
                 fscanf(file, "%lf", &data->B[row][column]);
             }
@@ -133,12 +134,12 @@ void *ConsumerProducer1(void *arg)
         sem_post(&shared[0].empty);
 
         // Multiplication matrix into C
-        for (int row = 0; row < 10; row++)
+        for (int row = 0; row < MATRIX_ORDER; row++)
         {
-            for (int column = 0; column < 10; column++)
+            for (int column = 0; column < MATRIX_ORDER; column++)
             {
                 item->C[row][column] = 0;
-                for (int k = 0; k < 10; k++)
+                for (int k = 0; k < MATRIX_ORDER; k++)
                 {
                     item->C[row][column] += item->A[row][k] * item->B[k][column];
                 }
@@ -183,11 +184,11 @@ void *ConsumerProducer2(void *arg)
         /* Increment the number of empty slots */
         sem_post(&shared[1].empty);
 
-        // Multiplication matrix into C
-        for (int column = 0; column < 10; column++)
+        // Sum columns into each element of V
+        for (int column = 0; column < MATRIX_ORDER; column++)
         {
             item->V[column] = 0;
-            for (int row = 0; row < 10; row++)
+            for (int row = 0; row < MATRIX_ORDER; row++)
             {
                 item->V[column] += item->C[row][column];
             }
@@ -231,9 +232,9 @@ void *ConsumerProducer3(void *arg)
         /* Increment the number of empty slots */
         sem_post(&shared[2].empty);
 
-        // Multiplication matrix into C
+        // Sum elements of V into E
         item->E = 0;
-        for (int contador = 0; contador < 10; contador++)
+        for (int contador = 0; contador < MATRIX_ORDER; contador++)
         {
             item->E += item->V[contador];
         }
@@ -287,7 +288,7 @@ void *Consumer(void *arg)
 void imprimeRecurso(S *recurso, FILE *saida)
 {
     char delimeter[41] = "=======================================\n";
-    char spacer[41] = "---------------------------------------\n";
+    char spacer[41] = "---------------------------------------";
     if (saida == NULL)
     {
         printf("Erro ao abrir arquivo de saída!\n");
@@ -295,12 +296,12 @@ void imprimeRecurso(S *recurso, FILE *saida)
     }
 
     fprintf(saida, "%s\n", delimeter);
-    fprintf(saida, "Nome: %s\n", recurso->nome);
+    fprintf(saida, "Nome: %s", recurso->nome);
     fprintf(saida, "%s\n", spacer);
     fprintf(saida, "Matriz A:\n");
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < MATRIX_ORDER; i++)
     {
-        for (int j = 0; j < 10; j++)
+        for (int j = 0; j < MATRIX_ORDER; j++)
         {
             fprintf(saida, "%f ", recurso->A[i][j]);
         }
@@ -309,9 +310,9 @@ void imprimeRecurso(S *recurso, FILE *saida)
     fprintf(saida, "%s\n", spacer);
 
     fprintf(saida, "Matriz B:\n");
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < MATRIX_ORDER; i++)
     {
-        for (int j = 0; j < 10; j++)
+        for (int j = 0; j < MATRIX_ORDER; j++)
         {
             fprintf(saida, "%f ", recurso->B[i][j]);
         }
@@ -320,9 +321,9 @@ void imprimeRecurso(S *recurso, FILE *saida)
     fprintf(saida, "%s\n", spacer);
 
     fprintf(saida, "Matriz C:\n");
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < MATRIX_ORDER; i++)
     {
-        for (int j = 0; j < 10; j++)
+        for (int j = 0; j < MATRIX_ORDER; j++)
         {
             fprintf(saida, "%f ", recurso->C[i][j]);
         }
@@ -331,11 +332,10 @@ void imprimeRecurso(S *recurso, FILE *saida)
     fprintf(saida, "%s\n", spacer);
 
     fprintf(saida, "Vetor V:\n");
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < MATRIX_ORDER; i++)
     {
         fprintf(saida, "%f\n", recurso->V[i]);
     }
-    fprintf(saida, "\n");
     fprintf(saida, "%s\n", spacer);
 
     fprintf(saida, "Valor E: %f\n", recurso->E);
@@ -402,13 +402,23 @@ int main()
         sC[index] = index;
         /* Create a new consumer */
         pthread_create(&idC[index], NULL, Consumer, &sC[index]);
-    }
-
-    for (index = 0; index < NC; index++)
-    {
         pthread_join(idC[index], NULL);
     }
 
-    pthread_join(idC[0], NULL);
+    for (index = 0; index < NCP1; index++)
+    {
+        pthread_cancel(idCP1[index]);
+    }
+
+    for (index = 0; index < NCP2; index++)
+    {
+        pthread_cancel(idCP2[index]);
+    }
+
+    for (index = 0; index < NCP3; index++)
+    {
+        pthread_cancel(idCP3[index]);
+    }
+
     pthread_exit(NULL);
 }
