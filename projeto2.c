@@ -125,7 +125,6 @@ void *ConsumerProducer1(void *arg)
         /* If another thread uses the buffer, wait */
         sem_wait(&shared[0].mutex);
         item = shared[0].buf[shared[0].out];
-        // shared[0].buf[shared[0].out] = NULL;  //Talvez tenha que settar como NULL o objeto consumido
         shared[0].out = (shared[0].out + 1) % BUFF_SIZE;
         /* Release the buffer */
         sem_post(&shared[0].mutex);
@@ -176,7 +175,6 @@ void *ConsumerProducer2(void *arg)
         /* If another thread uses the buffer, wait */
         sem_wait(&shared[1].mutex);
         item = shared[1].buf[shared[1].out];
-        // shared[0].buf[shared[0].out] = NULL;  //Talvez tenha que settar como NULL o objeto consumido
         shared[1].out = (shared[1].out + 1) % BUFF_SIZE;
         /* Release the buffer */
         sem_post(&shared[1].mutex);
@@ -224,7 +222,6 @@ void *ConsumerProducer3(void *arg)
         /* If another thread uses the buffer, wait */
         sem_wait(&shared[2].mutex);
         item = shared[2].buf[shared[2].out];
-        // shared[0].buf[shared[0].out] = NULL;  //Talvez tenha que settar como NULL o objeto consumido
         shared[2].out = (shared[2].out + 1) % BUFF_SIZE;
         /* Release the buffer */
         sem_post(&shared[2].mutex);
@@ -402,13 +399,27 @@ int main()
         sC[index] = index;
         /* Create a new consumer */
         pthread_create(&idC[index], NULL, Consumer, &sC[index]);
-    }
-
-    for (index = 0; index < NC; index++)
-    {
         pthread_join(idC[index], NULL);
     }
 
-    pthread_join(idC[0], NULL);
+    for (index = 0; index < NP; index++)
+    {
+        pthread_cancel(idP[index]);
+    }
+    for (index = 0; index < NCP1; index++)
+    {
+        pthread_cancel(idCP1[index]);
+    }
+
+    for (index = 0; index < NCP2; index++)
+    {
+        pthread_cancel(idCP2[index]);
+    }
+
+    for (index = 0; index < NCP3; index++)
+    {
+        pthread_cancel(idCP3[index]);
+    }
+
     pthread_exit(NULL);
 }
